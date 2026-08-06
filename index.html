@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Net Salary Calculator · Italy (RAL → Net)</title>
+    <meta
+      name="description"
+      content="Estimate annual and monthly net salary from gross annual salary (RAL) for a standard Milan employee. Breakdown of INPS, IRPEF, and local surcharges."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=3" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">€</div>
+          <div>
+            <h1>Net salary calculator</h1>
+            <p>Italy · Milan standard case</p>
+          </div>
+        </div>
+        <div class="badge">Tax year <span id="tax-year">2026</span></div>
+      </header>
+
+      <section class="hero">
+        <h2>From gross annual salary to take-home pay</h2>
+        <p>
+          Enter a <strong>RAL</strong> (gross annual salary) to estimate
+          <strong>net annual</strong> and <strong>net monthly</strong> pay, with
+          a full breakdown of employee withholdings: social security
+          (<strong>INPS</strong>), income tax (<strong>IRPEF</strong>), and
+          regional / municipal surcharges.
+        </p>
+      </section>
+
+      <div class="layout">
+        <aside class="card card-pad">
+          <h3>Inputs</h3>
+          <p class="sub">One required field · fixed standard scenario</p>
+
+          <form id="calc-form" novalidate>
+            <div class="field">
+              <label for="ral">Gross annual salary — RAL (€)</label>
+              <div class="input-wrap">
+                <span class="prefix">€</span>
+                <input
+                  id="ral"
+                  name="ral"
+                  type="text"
+                  inputmode="decimal"
+                  autocomplete="off"
+                  placeholder="35000"
+                  required
+                />
+              </div>
+              <span class="hint"
+                >Example: 35000. Also accepts 35,000.50 or 35.000,50</span
+              >
+            </div>
+
+            <div class="field">
+              <label for="months">Pay periods per year</label>
+              <select id="months" name="months">
+                <option value="12">12 months</option>
+                <option value="13" selected>13 months (default)</option>
+                <option value="14">14 months</option>
+              </select>
+              <span class="hint"
+                >Only splits annual net into a monthly figure. Tax is computed on
+                an annual basis.</span
+              >
+            </div>
+
+            <div class="assumptions">
+              <strong>Scenario (locked for this calculator)</strong>
+              <ul>
+                <li>Permanent full-time office employee</li>
+                <li>Tax residence: Milan, Lombardy</li>
+                <li>No special tax reliefs or dependents</li>
+                <li>Employment income only</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn">Calculate net</button>
+            <div id="error" class="error" hidden></div>
+          </form>
+        </aside>
+
+        <main class="card card-pad">
+          <div id="empty-state" class="empty" hidden>
+            <strong>No results yet</strong>
+            Enter a RAL and press Calculate net.
+          </div>
+
+          <div id="results">
+            <h3>Results</h3>
+            <p class="sub">
+              Annual projection · amounts withheld from the employee
+            </p>
+
+            <div class="kpis">
+              <div class="kpi primary">
+                <span class="label">Net annual</span>
+                <span class="value" id="kpi-net-annual">—</span>
+              </div>
+              <div class="kpi primary">
+                <span class="label">Net monthly</span>
+                <span class="value" id="kpi-net-monthly">—</span>
+                <span class="sublabel" id="kpi-months-label"></span>
+              </div>
+              <div class="kpi">
+                <span class="label">Total withholdings</span>
+                <span class="value" id="kpi-withholdings">—</span>
+              </div>
+              <div class="kpi">
+                <span class="label">Take-home rate</span>
+                <span class="value" id="kpi-take-home">—</span>
+                <span class="sublabel">net ÷ RAL</span>
+              </div>
+            </div>
+
+            <div class="composition">
+              <h4>How the RAL is split</h4>
+              <div id="composition-bar" class="bar" aria-hidden="true"></div>
+              <ul id="composition-legend" class="legend"></ul>
+            </div>
+
+            <div class="section-title">Withholding line items</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Line item</th>
+                    <th class="num">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="breakdown-body"></tbody>
+              </table>
+            </div>
+
+            <div class="section-title">IRPEF brackets</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Bracket</th>
+                    <th class="num">Base</th>
+                    <th class="num">Rate</th>
+                    <th class="num">Tax</th>
+                  </tr>
+                </thead>
+                <tbody id="irpef-brackets"></tbody>
+              </table>
+            </div>
+
+            <div class="section-title">Lombardy regional surcharge</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Band</th>
+                    <th class="num">Base</th>
+                    <th class="num">Rate</th>
+                    <th class="num">Tax</th>
+                  </tr>
+                </thead>
+                <tbody id="regional-brackets"></tbody>
+              </table>
+            </div>
+
+            <div class="meta">
+              <span
+                >Taxable income:
+                <strong id="meta-taxable">—</strong></span
+              >
+              <span>Residence: <strong id="meta-location">—</strong></span>
+              <span>Contract: <strong id="meta-contract">—</strong></span>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <footer class="footer">
+        <div class="card footer-card">
+          <h3>How the calculation works</h3>
+          <div class="pipeline">
+            <span>RAL</span><span class="arrow">→</span>
+            <span>− INPS 9.19%</span><span class="arrow">→</span>
+            <span>taxable income</span><span class="arrow">→</span>
+            <span>IRPEF − credits</span><span class="arrow">→</span>
+            <span>+ local surcharges</span><span class="arrow">→</span>
+            <span>net</span>
+          </div>
+          <p style="margin-top: 12px">
+            Simplified model for a standard Milan employee. Rates and formulas
+            for tax year 2026. Not tax advice — not a substitute for a payroll
+            professional.
+          </p>
+        </div>
+        <div class="card footer-card">
+          <h3>Not included</h3>
+          <ul>
+            <li>Severance (TFR), benefits, overtime, allowances</li>
+            <li>Dependent / family tax credits</li>
+            <li>Under-30, impatriate, or other special reliefs</li>
+            <li>Collective-agreement 14th month or union dues</li>
+            <li>Month-by-month advance/balance cash timing</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="./src/app.js?v=3"></script>
+  </body>
+</html>
